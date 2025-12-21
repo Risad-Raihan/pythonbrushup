@@ -28,8 +28,14 @@ class Microwave:
             print(f'A msytical force whispers: "Turn on oven BIATCH"')        
 
 
+    def __add__(self, other):
+        return f'{self.brand} + {other.brand}'
+
+
+
+
+
 smeg = Microwave('Smeg', 'B')
-smeg.turn_on()
-smeg.run(30)
-smeg.turn_off()
-smeg.run(10)
+bosch = Microwave('Bosch', 'C')
+
+print (smeg + bosch)
