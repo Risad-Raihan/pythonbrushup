@@ -28,7 +28,7 @@ class Microwave:
             print(f'A msytical force whispers: "Turn on oven BIATCH"')        
 
 
-    def __str__(self) -> None:
+    def __str__(self) -> str:
         return f'{self.brand} (Rating: {self.power_rating}) mathanoshto oven'
 
 
