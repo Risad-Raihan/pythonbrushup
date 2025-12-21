@@ -1,9 +1,9 @@
 
 
-##Python brushup:
+## Python brushup:
 
 
- ** NO VIBE CODING HERE
+  # NO VIBE CODING HERE
  
     - Advanced concepts
     - mostly yt projects
