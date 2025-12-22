@@ -127,3 +127,21 @@ tool_definitions= [
         }
     }
 ]
+
+
+#------------------------------------------------------------
+#Agent Loop - the real meat
+#------------------------------------------------------------
+
+def run_agent(user_input:str):
+    messages = [
+        {
+            "role": "system",
+            "content": (
+                "You are autonomous terminal AI agent. "
+                "You can inspect system, run commands, read/write files. "
+                "Think step by step, use tools when needed"
+            )
+        },
+        { "role": "user", "content": user_input }
+    ]
