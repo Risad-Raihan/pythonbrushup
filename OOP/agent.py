@@ -145,3 +145,22 @@ def run_agent(user_input:str):
         },
         { "role": "user", "content": user_input }
     ]
+
+    while True:                                                                     #need clarifications
+        response = client.chat.completions.create(
+            model = "gpt-4.1-mini",
+            messages = messages,
+            tools = tool_definitions,
+            tool_choice = "auto"
+        )
+
+        message = response.choices[0].message
+
+        if message.tool_calls:                                                      #if model wants to call a tool
+            for tool_call in message.tool_calls:
+                tool_name = tool_call.function.name
+                tool_args = json.loads(tool_call.function.arguments)                #return json tool arguments as python dict
+
+                print(f"\n󰘧 TOOL CALL -> {tool_name}({tool_args})")
+
+                tool_result = TOOLS[tool_name](**tool_args)                         
