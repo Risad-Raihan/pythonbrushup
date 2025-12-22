@@ -3,7 +3,7 @@ import subprocess                                               # for terminal a
 import typing                                                   # type hints
 from openai import OpenAI 
 
-client = OpenAI                                                 # OpenAI client, reads api from .env
+client = OpenAI(api_key="your api")                                                # OpenAI client, reads api from .env
 
 
 #-----------------------------------------------------------------------------------------------------------------------------------
@@ -35,7 +35,7 @@ def read_file(path:str) -> str:                                  # reads file co
 
 
 
-def write_file(path:str, content:str) -> astr:                   # write content on file and return string
+def write_file(path:str, content:str) -> str:                   # write content on file and return string
     try:
         with open(path, "w") as f:
             f.write(content)
@@ -62,7 +62,6 @@ TOOLS = {                                                         #Dictionary to
     "read_file": read_file,
     "write_file": write_file,
     "system_info": system_info
-
 }
 
 
@@ -71,62 +70,55 @@ TOOLS = {                                                         #Dictionary to
 #Tool schema - each schema is in OpenAI tool/function format
 #----------------------------------------------
 
-tool_definitions= [
+tool_definitions = [
     {
-        "type": "funtion",                                                       #callable funntion
-        "function": {                                       
-            "name": "run_shell_command",                                         #must exactly match the key in tools
-            "description": " Run a shell command on the system",                 #model uses this to decided whether to use this tool
-            "parameters": {                                                      # JSON schema that tells model what arguments to provide
-                "type": "object",
-                "properties": {
-                    "command": {"type": "string"}
-                },
-                "required": ["command"]                                          #model must include command   
-            }
+        "type": "function",
+        "name": "run_shell_command",
+        "description": "Run a shell command on the system",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "command": {"type": "string"}
+            },
+            "required": ["command"]
         }
     },
     {
         "type": "function",
-        "function": {
-            "name": "read_file",
-            "description": "Read a text file",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "path": {"type": "string"}
-                },
-                "required": ["path"]
-            }
+        "name": "read_file",
+        "description": "Read a text file",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "path": {"type": "string"}
+            },
+            "required": ["path"]
         }
     },
     {
         "type": "function",
-        "function": {
-            "name": "write_file",
-            "description": "write content to a file",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "path": {"type": "string"},
-                    "content": {"type": "string"}
-                },
-                "required": ["path", "content"]
-            }
+        "name": "write_file",
+        "description": "Write content to a file",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "path": {"type": "string"},
+                "content": {"type": "string"}
+            },
+            "required": ["path", "content"]
         }
     },
     {
         "type": "function",
-        "function": {
-            "name": "system_info",
-            "description": "Get system information",
-            "parameters": {
-                "type": "object",
-                "properties": {}
-            }
+        "name": "system_info",
+        "description": "Get system information",
+        "parameters": {
+            "type": "object",
+            "properties": {}
         }
     }
 ]
+
 
 
 #------------------------------------------------------------
@@ -134,33 +126,66 @@ tool_definitions= [
 #------------------------------------------------------------
 
 def run_agent(user_input:str):
-    messages = [
-        {
-            "role": "system",
-            "content": (
-                "You are autonomous terminal AI agent. "
-                "You can inspect system, run commands, read/write files. "
-                "Think step by step, use tools when needed"
-            )
-        },
-        { "role": "user", "content": user_input }
-    ]
+    response = client.responses.create(
+        model = "gpt-4.1-mini",
+        tools = tool_definitions,
+        input = [
+            {
+                "role": "system",
+                "content": (
+                    "You are autonomous terminal AI agent. "
+                    "You can inspect system, run commands, read/write files. "
+                    "Think step by step, use tools when needed"
+                )
+            },
+            { "role": "user", "content": user_input }
+        ]
+    )
 
     while True:                                                                     #need clarifications
-        response = client.chat.completions.create(
-            model = "gpt-4.1-mini",
-            messages = messages,
-            tools = tool_definitions,
-            tool_choice = "auto"
-        )
+        outputs = response.output
 
-        message = response.choices[0].message
+        tool_calls = [o for o in outputs if o.type == "function_call"]
 
-        if message.tool_calls:                                                      #if model wants to call a tool
-            for tool_call in message.tool_calls:
-                tool_name = tool_call.function.name
-                tool_args = json.loads(tool_call.function.arguments)                #return json tool arguments as python dict
+        if tool_calls:                                                      #if model wants to call a tool
+            for tool_call in tool_calls:
+                tool_name = tool_call.name
+                tool_args = json.loads(tool_call.arguments or "{}")          #return json tool arguments as python dict
 
                 print(f"\n󰘧 TOOL CALL -> {tool_name}({tool_args})")
 
-                tool_result = TOOLS[tool_name](**tool_args)                         
+                tool_result = TOOLS[tool_name](**tool_args)                  #execute the tool
+
+                # IMPORTANT: Responses API does NOT accept role="tool"
+                # Tool output must be sent as function_call_output
+                response = client.responses.create(
+                    model = "gpt-4.1-mini",
+                    tools = tool_definitions,
+                    previous_response_id = response.id,
+                    input = [
+                        {
+                            "type": "function_call_output",
+                            "call_id": tool_call.call_id,
+                            "output": str(tool_result)
+                        }
+                    ]
+                )
+        else:
+            print("\n󰊠 AGENT RESPONSE:\n")
+            print(response.output_text)
+            break
+
+
+
+
+#Entry Point
+
+if __name__ == "__main__":
+    print("󰚩 Terminal AI Ops Agent")
+    print("Type your request (or 'exit')\n")
+
+    while True:
+        user_input = input("> ")
+        if user_input.lower() in {"exit", "quit"}:
+            break
+        run_agent(user_input)
