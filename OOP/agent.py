@@ -2,6 +2,10 @@ import json                                            # for terminal acess
 import typing                                                   # type hints
 from openai import OpenAI 
 from tool_registry import ToolRegistry
+from schemas import tool_definitions
+from response_parser import ResponseParser
+
+
 
 from tools import (
     run_shell_command,
@@ -10,12 +14,12 @@ from tools import (
     system_info
 )
 
-from schemas import tool_definitions
 
 
 
 
-client = OpenAI(api_key="your api key")
+
+client = OpenAI(api_key="your api")
 #-----------------------------------------------------------------------------------------------------------------
 #Tool Registry 
 #----------------------------------------------------------------------------------------------------------------
@@ -52,21 +56,17 @@ def run_agent(user_input:str):
     )
 
     while True:                                                                     #need clarifications
-        outputs = response.output
+        parser = ResponseParser(response)
 
-        tool_calls = [o for o in outputs if o.type == "function_call"]
-
-        if tool_calls:                                                      #if model wants to call a tool
-            for tool_call in tool_calls:
+        if parser.has_tool_calls():
+            for tool_call in parser.get_tool_calls():
                 tool_name = tool_call.name
-                tool_args = json.loads(tool_call.arguments or "{}")          #return json tool arguments as python dict
-
+                tool_args = json.loads(tool_call.arguments or {})
+                
                 print(f"\n󰘧 TOOL CALL -> {tool_name}({tool_args})")
 
-                tool_result = tool_registry.execute(tool_name, tool_args)                  #execute the tool
+                tool_result = tool_registry.execute(tool_name, tool_args)
 
-                # IMPORTANT: Responses API does NOT accept role="tool"
-                # Tool output must be sent as function_call_output
                 response = client.responses.create(
                     model = "gpt-4.1-mini",
                     tools = tool_definitions,
@@ -81,7 +81,7 @@ def run_agent(user_input:str):
                 )
         else:
             print("\n󰊠 AGENT RESPONSE:\n")
-            print(response.output_text)
+            print(parser.get_text())
             break
 
 
