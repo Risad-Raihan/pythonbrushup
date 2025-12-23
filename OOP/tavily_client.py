@@ -1,11 +1,14 @@
 import os
+from dotenv import load_dotenv
 from typing import List, Dict
 from tavily import TavilyClient
+
+load_dotenv()
 
 class TavilySearchClient:
     def __init__(self, api_key: str | None = None):
         #loaded from .emv
-        self.api_key = api_key or os.getenv("Tavily_API_KEY")
+        self.api_key = api_key or os.getenv("TAVILY_API_KEY")
 
         if not self.api_key:
             raise ValueError("API not found on env")
@@ -16,8 +19,9 @@ class TavilySearchClient:
     def search(
         self,
         query:str,
-        max_result: int = 4,
-        search_depth: "general"
+        max_results: int = 4,
+        search_depth:str = "basic",
+        topic: str = "general"
     ) -> List[Dict]:
         """
         tavily web serach and return raw result:
@@ -29,7 +33,7 @@ class TavilySearchClient:
 
         response = self.client.search(
             query = query,
-            max_result = max_result,
+            max_results = max_results,
             search_depth = search_depth,
             topic = topic,
             include_answer =  False,
