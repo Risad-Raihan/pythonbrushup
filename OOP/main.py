@@ -1,42 +1,53 @@
-class Microwave:
-    def __init__(self, brand:str, power_rating:str) -> None:
-        self.brand = brand 
-        self.power_rating = power_rating
-        self.turned_on:bool = False
+from tavily_client import TavilySearchClient
+from search_tool import SearchTool
+from llm_short_answer import ShortAnswerLLM
+from ui import (
+    render_header,
+    prompt_user_question,
+    render_thinking,
+    render_short_answer,
+    ask_decision,
+    ask_next_action
+)
+
+#------------------------------------------------------------
+# Main Agent Loop
+#------------------------------------------------------------
+
+def run_agent():
+    tavily = TavilySearchClient()
+    search_tool = SearchTool()
+    llm = ShortAnswerLLM()
+
+    render_header()
+
+    while True:
+        #ask question
+        query = prompt_user_question()
+        if not query:
+            continue
+
+        #web search + context
+        render_thinking()
+        results = tavily.search(query)
+        context = search_tool.build_context(query, results)
+
+        #short answer
+        answer = llm.answer(query, context)
+        render_short_answer(answer)
+
+        #Decision gate
+        choice = ask_decision()
+        if choice == "m":
+            print("\n󰒓 Long answer generation coming next...\n")
+
+        #next action
+        next_action = ask_next_action()
+        if next_action == "q":
+            print("\n👋 Goodbye.\n")
+            break
 
 
-    def turn_on(self) -> None:
-        if self.turned_on:
-            print(f'Microwave ({self.brand} is alreay turned on)')
-        else:
-            self.turned_on = True 
-            print(f'Microwave ({self.brand} is now turned on)')
 
-
-    def turn_off(self) -> None:
-        if self.turned_on:
-            self.turned_on = False
-            print(f'Mircrowave ({self.brand} is now turned off)')
-        else:
-            print(f'Microwave ({self.brand} is already turned off)')
-
-
-    def run(self, seconds: int) -> None:
-        if self.turned_on:
-            print(f'Running ({self.brand} for ({seconds} seconds......))')
-        else:
-            print(f'A msytical force whispers: "Turn on oven BIATCH"')        
-
-
-    def __str__(self) -> str:
-        return f'{self.brand} (Rating: {self.power_rating}) mathanoshto oven'
-
-
-
-
-
-smeg = Microwave('Smeg', 'B')
-bosch = Microwave('Bosch', 'C')
-
-print (smeg)
-print(bosch)
+if __name__ == "__main__":
+    run_agent()
