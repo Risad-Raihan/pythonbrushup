@@ -4,6 +4,8 @@
 
 
   # NO VIBE CODING HERE
+  
+  # Focusing on refactoring and fastapi conversion
  
     - Advanced concepts
     - mostly yt projects

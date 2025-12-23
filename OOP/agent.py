@@ -18,10 +18,6 @@ from tools import (
 
 client = OpenAI()        #calling from .env, setting up client
 
-#-----------------------------------------------------------------------------------------------------------------
-#Tool Registry 
-#----------------------------------------------------------------------------------------------------------------
-
 TOOLS = {                                                         #Dictionary to map real python object for the tools
     "run_shell_command": run_shell_command,
     "read_file": read_file,
