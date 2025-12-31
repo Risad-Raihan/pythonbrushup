@@ -1,0 +1,27 @@
+{
+  "title": "Test Report",
+  "query": "What is the EU AI Act?",
+  "summary": "This is a test summary used to validate the text renderer.",
+  "sections": [
+    {
+      "heading": "Overview",
+      "points": [
+        "This is a test bullet point",
+        "Another test bullet point"
+      ]
+    },
+    {
+      "heading": "Practical Impact",
+      "points": [
+        "This section is required",
+        "Used to test rendering"
+      ]
+    }
+  ],
+  "sources": [
+    {
+      "title": "Test Source",
+      "url": "https://example.com"
+    }
+  ]
+}
